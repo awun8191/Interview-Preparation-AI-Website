@@ -1,0 +1,10 @@
+# Agent session state, local plans, and learned preferences
+.commandcode/
+
+# Logs
+*.log
+firebase-debug.log
+
+# OS files
+.DS_Store
+Thumbs.db
