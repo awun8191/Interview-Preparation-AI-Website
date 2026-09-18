@@ -88,10 +88,33 @@ jobs:
             exit 0
           fi
 
+          # Plain pushes never produce PRs, so GitHub's --generate-notes would
+          # emit an empty changelog. Build the notes from the commits that
+          # actually touched the web app instead.
+          PREV=$(git describe --tags --abbrev=0 --match 'web-v*' 2>/dev/null || true)
+          if [ -n "$PREV" ]; then
+            RANGE="${PREV}..HEAD"
+            HEADING="Changes since \`${PREV}\`"
+          else
+            RANGE="HEAD"
+            HEADING="Initial release"
+          fi
+
+          {
+            echo "Deployed to https://the-plan.raregazzetto.me"
+            echo
+            echo "**Version:** \`${VERSION}\` · **Commit:** \`${GITHUB_SHA:0:12}\`"
+            echo
+            echo "### ${HEADING}"
+            echo
+            git log --no-merges --pretty=format:'- %s (`%h`)' "$RANGE" -- web/ | head -80
+            echo
+          } > /tmp/release-notes.md
+
           gh release create "$TAG" \
             --repo "$GITHUB_REPOSITORY" \
             --title "Web v${VERSION}" \
             --target "$GITHUB_SHA" \
-            --generate-notes
+            --notes-file /tmp/release-notes.md
 
           echo "::notice::Created release $TAG"
