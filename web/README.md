@@ -48,3 +48,16 @@ browser will block the requests.
 
 `bun scripts/postbuild.ts` rewrites asset references in `dist/index.html` to absolute paths, so deep links
 such as `/practice/` resolve their JS/CSS correctly under the SPA fallback.
+
+## Versioning
+
+`bun scripts/version.ts` stamps each build into `dist/version.json` (version from `package.json`,
+plus commit, branch and build time). The Worker serves it at `/version.json`:
+
+```bash
+curl -s https://the-plan.raregazzetto.me/version.json | jq
+```
+
+Bumping `version` in `package.json` is what cuts a release — the `Deploy Web` workflow verifies the
+live commit and then tags `web-v<version>` with generated release notes. See
+[../CI-CD.md](../CI-CD.md).

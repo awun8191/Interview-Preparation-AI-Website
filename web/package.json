@@ -1,5 +1,5 @@
 {
-  "name": "bun-react-template",
+  "name": "the-plan-web",
   "version": "0.1.0",
   "private": true,
   "type": "module",
@@ -7,7 +7,7 @@
     "dev": "bun --hot src/index.ts",
     "briefs": "bun scripts/build-framework-briefs.ts",
     "typecheck": "tsc --noEmit",
-    "build": "rm -rf dist && bun build ./src/index.html --outdir=dist --sourcemap --target=browser --minify --define:process.env.NODE_ENV='\"production\"' --env='BUN_PUBLIC_*' && bun scripts/postbuild.ts",
+    "build": "rm -rf dist && bun build ./src/index.html --outdir=dist --sourcemap --target=browser --minify --define:process.env.NODE_ENV='\"production\"' --env='BUN_PUBLIC_*' && bun scripts/postbuild.ts && bun scripts/version.ts",
     "deploy": "bun run build && wrangler deploy",
     "start": "NODE_ENV=production bun src/index.ts"
   },

@@ -70,3 +70,10 @@ runbooks, and troubleshooting — plus `backend/README.md` and `web/README.md` f
 No long-lived Google Cloud key is stored: `deploy-api.yml` exchanges a short-lived OIDC token
 for credentials. The API's provider keys live as environment variables on the Cloud Run
 service, so redeploys preserve them.
+
+### Web versioning
+
+Each web build is stamped with its version and commit, served at
+[`/version.json`](https://the-plan.raregazzetto.me/version.json). A deploy that verifies live is
+tagged `web-v<version>` with generated release notes. Bumping `version` in `web/package.json` is what
+cuts a release — see [CI-CD.md](./CI-CD.md#versioning-and-releases).
