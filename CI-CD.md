@@ -143,6 +143,43 @@ wrangler **3.90.0**, which predates assets-only Workers configs and fails with
 `Missing entry-point: … or the 'main' config field`. Keeping wrangler declared locally means the
 action uses 4.x and local deploys match CI. Bump it deliberately, not accidentally.
 
+### Versioning and releases
+
+Every build is stamped by `web/scripts/version.ts`, which writes `dist/version.json`:
+
+```json
+{
+  "name": "the-plan-web",
+  "version": "0.1.0",
+  "commit": "5a052d8e62e4",
+  "branch": "main",
+  "builtAt": "2026-09-18T03:33:09.747Z"
+}
+```
+
+It is served by the Worker, so the deployed version is always one request away:
+
+```bash
+curl -s https://the-plan.raregazzetto.me/version.json | jq
+```
+
+`version` is read from `web/package.json`; `commit` prefers CI's `GITHUB_SHA` and falls back to
+reading git locally. Nothing is rendered in the UI — this is an artifact-level marker, not telemetry
+in the product.
+
+The release sequence is deliberately deploy-first:
+
+1. Build, stamp, deploy to Cloudflare.
+2. **Verify** — poll `/version.json` until it reports the commit that was just built. A deploy that
+   doesn't actually go live fails the run rather than being reported as success.
+3. **Tag and release** — create the `web-v<version>` tag and a GitHub Release with generated notes.
+   Because this runs only after verification, a tag always means "this shipped".
+
+If the release already exists the step skips with a notice, so ordinary pushes don't spam releases.
+
+**To cut a release:** bump `version` in `web/package.json`, then push to `main` (or run
+`gh workflow run deploy-web.yml`).
+
 ---
 
 ## Repository secrets
@@ -165,6 +202,23 @@ Rotate it by creating a replacement in the dashboard, then re-running `gh secret
 ---
 
 ## Runbooks
+
+### Cut a web release
+
+1. Bump `version` in `web/package.json`.
+2. Commit and push to `main`, or run `gh workflow run deploy-web.yml`.
+3. The workflow deploys, verifies `/version.json` matches the built commit, then tags
+   `web-v<version>` and opens the GitHub Release.
+
+Pushing without bumping the version is safe — the release step notices the tag already exists and
+skips.
+
+### Confirm what is currently deployed
+
+```bash
+curl -s https://the-plan.raregazzetto.me/version.json | jq
+gh release list --repo awun8191/the-plan-software
+```
 
 ### Point the website at a different API
 

@@ -20,8 +20,15 @@ jobs:
   deploy:
     name: Cloudflare Workers
     runs-on: ubuntu-latest
+    # contents:write lets the final step tag the commit and open a release.
+    permissions:
+      contents: write
     steps:
       - uses: actions/checkout@v4
+        with:
+          # Full history so the generated release notes can diff against the
+          # previous web release tag.
+          fetch-depth: 0
 
       - uses: oven-sh/setup-bun@v2
         with:
@@ -35,6 +42,9 @@ jobs:
         working-directory: web
         run: bun run build
 
+      - name: Show stamped version
+        run: cat web/dist/version.json
+
       - name: Deploy to Cloudflare Workers
         uses: cloudflare/wrangler-action@v3
         with:
@@ -42,3 +52,44 @@ jobs:
           accountId: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
           workingDirectory: web
           command: deploy
+
+      - name: Verify the deployed version is live
+        run: |
+          echo "Waiting for /version.json to serve the built commit…"
+          for attempt in $(seq 1 10); do
+            SERVED=$(curl -fsS https://the-plan.raregazzetto.me/version.json 2>/dev/null || true)
+            if [ -n "$SERVED" ]; then
+              echo "$SERVED"
+              BUILT=$(jq -r .commit web/dist/version.json)
+              LIVE=$(echo "$SERVED" | jq -r .commit)
+              if [ "$BUILT" = "$LIVE" ]; then
+                echo "::notice::Deployed commit $LIVE is live."
+                exit 0
+              fi
+              echo "Serving $LIVE, expected $BUILT — retrying…"
+            fi
+            sleep 5
+          done
+          echo "::error::/version.json did not report the built commit within the timeout."
+          exit 1
+
+      # Only after a verified deploy, so a tag always means "this shipped".
+      - name: Tag and release
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          VERSION=$(jq -r .version web/package.json)
+          TAG="web-v${VERSION}"
+
+          if gh release view "$TAG" --repo "$GITHUB_REPOSITORY" >/dev/null 2>&1; then
+            echo "::notice::Release $TAG already exists — skipping. Bump 'version' in web/package.json to cut a new release."
+            exit 0
+          fi
+
+          gh release create "$TAG" \
+            --repo "$GITHUB_REPOSITORY" \
+            --title "Web v${VERSION}" \
+            --target "$GITHUB_SHA" \
+            --generate-notes
+
+          echo "::notice::Created release $TAG"
