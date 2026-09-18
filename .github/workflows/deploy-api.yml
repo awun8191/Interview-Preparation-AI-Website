@@ -1,0 +1,61 @@
+name: Deploy API
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - "backend/**"
+      - ".github/workflows/deploy-api.yml"
+  workflow_dispatch:
+
+concurrency:
+  group: deploy-api
+  cancel-in-progress: false
+
+env:
+  PROJECT_ID: theplan-9311e
+  REGION: us-central1
+  SERVICE: the-plan-api
+  RUNTIME_SA: the-plan-api@theplan-9311e.iam.gserviceaccount.com
+
+jobs:
+  deploy:
+    name: Cloud Run
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      id-token: write # required for Workload Identity Federation
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: google-github-actions/auth@v2
+        with:
+          workload_identity_provider: ${{ secrets.GCP_WORKLOAD_IDENTITY_PROVIDER }}
+          service_account: ${{ secrets.GCP_SERVICE_ACCOUNT }}
+
+      - uses: google-github-actions/setup-gcloud@v2
+
+      # Environment variables already live on the service and are preserved across
+      # deploys, so only the image/config needs to be pushed here.
+      - name: Deploy to Cloud Run
+        working-directory: backend
+        run: |
+          gcloud run deploy "$SERVICE" \
+            --source . \
+            --project "$PROJECT_ID" \
+            --region "$REGION" \
+            --service-account "$RUNTIME_SA" \
+            --allow-unauthenticated \
+            --port 8080 \
+            --memory 512Mi \
+            --cpu 1 \
+            --timeout 60 \
+            --min-instances 0 \
+            --max-instances 4 \
+            --quiet
+
+      - name: Report service URL
+        run: |
+          gcloud run services describe "$SERVICE" \
+            --project "$PROJECT_ID" --region "$REGION" \
+            --format 'value(status.url)'
