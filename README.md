@@ -48,8 +48,9 @@ cd web     && bun run typecheck
 
 ## Deployment
 
-Both are deployed by GitHub Actions on push to `main`, and both can be run manually
-(see `backend/README.md` and `web/README.md`).
+Both are deployed by GitHub Actions on push to `main`, and both can be run manually.
+See **[CI-CD.md](./CI-CD.md)** for the full reference — workflows, secrets, infrastructure,
+runbooks, and troubleshooting — plus `backend/README.md` and `web/README.md` for service detail.
 
 | Workflow | Trigger | Target |
 |---|---|---|
