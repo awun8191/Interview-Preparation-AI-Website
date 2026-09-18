@@ -55,21 +55,23 @@ jobs:
 
       - name: Verify the deployed version is live
         run: |
-          echo "Waiting for /version.json to serve the built commit…"
-          for attempt in $(seq 1 10); do
-            SERVED=$(curl -fsS https://the-plan.raregazzetto.me/version.json 2>/dev/null || true)
-            if [ -n "$SERVED" ]; then
-              echo "$SERVED"
-              BUILT=$(jq -r .commit web/dist/version.json)
-              LIVE=$(echo "$SERVED" | jq -r .commit)
-              if [ "$BUILT" = "$LIVE" ]; then
-                echo "::notice::Deployed commit $LIVE is live."
-                exit 0
-              fi
-              echo "Serving $LIVE, expected $BUILT — retrying…"
+          BUILT=$(jq -r .commit web/dist/version.json)
+          echo "Built commit: $BUILT"
+
+          # Right after a deploy the edge can briefly serve the SPA fallback for
+          # a path that is new, so parse defensively and keep retrying rather
+          # than letting a parse error abort the loop.
+          for attempt in $(seq 1 12); do
+            LIVE=$(curl -fsS https://the-plan.raregazzetto.me/version.json 2>/dev/null \
+              | jq -r '.commit // empty' 2>/dev/null || true)
+            if [ "$LIVE" = "$BUILT" ]; then
+              echo "::notice::Deployed commit $LIVE is live."
+              exit 0
             fi
+            echo "attempt ${attempt}: serving '${LIVE:-<no json yet>}', expected ${BUILT}; retrying in 5s"
             sleep 5
           done
+
           echo "::error::/version.json did not report the built commit within the timeout."
           exit 1
 
