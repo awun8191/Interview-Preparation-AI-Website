@@ -18,7 +18,7 @@ The platform operates on a **tripartite cognitive architecture**:
 ## 2. Monorepo Directory Structure
 
 ```
-the-plan-software/
+Interview-Preparation-AI-Website/
 ├── backend/            # Python 3.13+ API (uv, FastAPI, Gemini, Groq, Jev)
 ├── mobile/             # Flutter / Dart Cross-Platform Mobile Client (Android & iOS)
 ├── web/                # Bun + TypeScript / React Web Client

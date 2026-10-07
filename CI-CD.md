@@ -82,7 +82,7 @@ scoped to this repository.
 | Deploy identity | `the-plan-deployer@theplan-9311e.iam.gserviceaccount.com` |
 | WIF provider | `projects/480187173082/locations/global/workloadIdentityPools/github/providers/github` |
 
-The OIDC provider is constrained by `attribute-condition = assertion.repository=='awun8191/the-plan-software'`,
+The OIDC provider is constrained by `attribute-condition = assertion.repository=='awun8191/Interview-Preparation-AI-Website'`,
 so no other repository can authenticate as the deployer.
 
 ### Permissions
@@ -184,7 +184,7 @@ If the release already exists the step skips with a notice, so ordinary pushes d
 
 ## Repository secrets
 
-Set with `gh secret set <NAME> --repo awun8191/the-plan-software`.
+Set with `gh secret set <NAME> --repo awun8191/Interview-Preparation-AI-Website`.
 
 | Secret | Where it comes from |
 | :--- | :--- |
@@ -217,7 +217,7 @@ skips.
 
 ```bash
 curl -s https://the-plan.raregazzetto.me/version.json | jq
-gh release list --repo awun8191/the-plan-software
+gh release list --repo awun8191/Interview-Preparation-AI-Website
 ```
 
 ### Point the website at a different API
